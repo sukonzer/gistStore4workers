@@ -68,10 +68,5 @@ export const mergeTemplate = (template, nodes) => {
         }
     });
 
-    // 4) 动态 cache_id
-    if (config?.experimental?.cache_file) {
-        config.experimental.cache_file.cache_id = 'singbox';
-    }
-
     return config;
 };
