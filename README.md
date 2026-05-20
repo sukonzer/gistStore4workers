@@ -126,20 +126,13 @@ npm run dev
 ### 4. 发请求验证
 
 ```bash
-# 首页
-curl http://127.0.0.1:8787/
 
 # base64 订阅
 curl http://127.0.0.1:8787/<AUTH_TOKEN>/nodes
 
 # sing-box JSON
-curl http://127.0.0.1:8787/<AUTH_TOKEN>/singbox
-
-# 异常用例
-curl -i http://127.0.0.1:8787/wrong-token/nodes   # 403
-curl -i -X POST http://127.0.0.1:8787/            # 405
+curl http://127.0.0.1:8787/<AUTH_TOKEN>/singbox        # 405
 ```
-
 ---
 
 ## Gist 内容格式
