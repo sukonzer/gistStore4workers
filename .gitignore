@@ -1,0 +1,14 @@
+node_modules/
+.wrangler/
+
+# 本地 secrets，禁止提交
+.dev.vars
+.dev.vars.local
+.env
+.env.local
+
+# 编辑器/系统
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

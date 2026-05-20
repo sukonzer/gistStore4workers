@@ -1,0 +1,7 @@
+# 复制为 .dev.vars 并填入真实值，wrangler dev 会自动注入到 env。
+# .dev.vars 已在 .gitignore 中，不会被提交。
+
+AUTH_TOKEN="your-long-random-token-at-least-13-chars"
+GIST_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+GIST_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+GIT_TEMPLATE_URL="https://raw.githubusercontent.com/<user>/<repo>/main/template.json"

@@ -1,0 +1,18 @@
+name = "giststore4workers"
+main = "index.js"
+compatibility_date = "2024-09-23"
+
+# 让 *.html 可以作为文本模块直接 import：
+#   import BLOG_HTML from './index.html';
+rules = [
+  { type = "Text", globs = ["**/*.html"] }
+]
+
+# 需要在 Cloudflare Dashboard 或用 `wrangler secret put` 配置：
+#   AUTH_TOKEN        访问路由所需的 token，长度 >= 13
+#   GIST_TOKEN        GitHub Gist Personal Access Token
+#   GIST_ID           目标 Gist 的 ID
+#   GIT_TEMPLATE_URL  sing-box 模板 JSON 的远程 URL
+
+# [vars]
+# GIT_TEMPLATE_URL = "https://example.com/template.json"
