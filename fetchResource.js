@@ -51,21 +51,23 @@ export const fetchGist = async (GIST_TOKEN, GIST_ID, type) => {
 // 模板基本静态，用 caches.default 做 5 分钟短缓存，跨 dev / prod 一致工作。
 // 不用 `cf: { cacheTtl, cacheEverything }` 是因为该字段在 wrangler dev 下
 // 偶发 internal error，且行为不直观。
+//
+// 返回原始文本字符串，由调用方按各自格式（JSON / YAML）自行解析。
 const TEMPLATE_CACHE_TTL = 300;
 
-export const fetchTemplate = async (GIT_TEMPLATE_URL) => {
-    if (!GIT_TEMPLATE_URL) throw new Error('GIT_TEMPLATE_URL not configured');
+export const fetchTemplate = async (templateUrl) => {
+    if (!templateUrl) throw new Error('template URL not configured');
 
     const cache = typeof caches !== 'undefined' ? caches.default : null;
-    const cacheKey = new Request(GIT_TEMPLATE_URL, { method: 'GET' });
+    const cacheKey = new Request(templateUrl, { method: 'GET' });
 
     let resp = cache ? await cache.match(cacheKey) : undefined;
     if (!resp) {
-        resp = await fetch(GIT_TEMPLATE_URL, {
+        resp = await fetch(templateUrl, {
             headers: { 'User-Agent': UA },
         });
         if (!resp.ok) {
-            throw new Error(`Template fetch failed: ${resp.status} ${resp.statusText} (${GIT_TEMPLATE_URL})`);
+            throw new Error(`Template fetch failed: ${resp.status} ${resp.statusText} (${templateUrl})`);
         }
         if (cache) {
             const cacheable = new Response(resp.clone().body, resp);
@@ -73,5 +75,5 @@ export const fetchTemplate = async (GIT_TEMPLATE_URL) => {
             await cache.put(cacheKey, cacheable);
         }
     }
-    return resp.json();
+    return resp.text();
 };

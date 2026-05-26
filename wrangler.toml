@@ -9,10 +9,12 @@ rules = [
 ]
 
 # 需要在 Cloudflare Dashboard 或用 `wrangler secret put` 配置：
-#   AUTH_TOKEN        访问路由所需的 token，长度 >= 13
-#   GIST_TOKEN        GitHub Gist Personal Access Token
-#   GIST_ID           目标 Gist 的 ID
-#   GIT_TEMPLATE_URL  sing-box 模板 JSON 的远程 URL
+#   AUTH_TOKEN           访问路由所需的 token，长度 >= 13
+#   GIST_TOKEN           GitHub Gist Personal Access Token
+#   GIST_ID              目标 Gist 的 ID
+#   GIT_SINGBOX_RAW  sing-box 模板 JSON 的远程 raw URL
+#   GIT_MIHOMO_RAW   mihomo (Clash.Meta) 模板 YAML 的远程 raw URL（启用 /mihomo 时必需）
 
 # [vars]
-# GIT_TEMPLATE_URL = "https://example.com/template.json"
+# GIT_SINGBOX_RAW = "https://example.com/template.json"
+# GIT_MIHOMO_RAW = "https://example.com/mihomo-template.yaml"

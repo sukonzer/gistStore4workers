@@ -1,6 +1,7 @@
 import BLOG_HTML from './index.html';
 import { fetchGist } from './fetchResource.js';
-import { parse2sb } from './parse2sb/index.js';
+import { parse2singbox } from './parse2singbox/index.js';
+import { parse2mihomo } from './parse2mihomo/index.js';
 
 // ============================================================
 // 常量
@@ -64,6 +65,16 @@ const text = (body, init = {}) =>
         },
     });
 
+const yaml = (body, init = {}) =>
+    new Response(body, {
+        ...init,
+        headers: {
+            'Content-Type': 'text/yaml; charset=utf-8',
+            'Cache-Control': 'no-store',
+            ...(init.headers || {}),
+        },
+    });
+
 // ============================================================
 // Worker 入口
 // ============================================================
@@ -107,15 +118,30 @@ export default {
         try {
             // 保留动作：singbox → 拉 nodes + 模板，合并出 sing-box JSON
             if (action === 'singbox') {
-                const config = await parse2sb(
+                const config = await parse2singbox(
                     {
                         GIST_TOKEN: env.GIST_TOKEN,
                         GIST_ID: env.GIST_ID,
-                        GIT_TEMPLATE_URL: env.GIT_TEMPLATE_URL,
+                        GIT_SINGBOX_RAW: env.GIT_SINGBOX_RAW,
                     },
                     'nodes',
                 );
                 return json(config, {
+                    headers: SUBSCRIPTION_HEADERS,
+                });
+            }
+
+            // 保留动作：mihomo → 拉 nodes + mihomo 模板，合并出 mihomo (Clash.Meta) YAML
+            if (action === 'mihomo' || action === 'clash') {
+                const body = await parse2mihomo(
+                    {
+                        GIST_TOKEN: env.GIST_TOKEN,
+                        GIST_ID: env.GIST_ID,
+                        GIT_MIHOMO_RAW: env.GIT_MIHOMO_RAW,
+                    },
+                    'nodes',
+                );
+                return yaml(body, {
                     headers: SUBSCRIPTION_HEADERS,
                 });
             }

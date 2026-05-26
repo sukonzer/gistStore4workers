@@ -1,33 +1,19 @@
 // ============================================================
 // URL 转 sing-box 节点
 // ============================================================
+import {
+    toPort,
+    b64decode,
+    safeDecode,
+    splitCsv,
+    normalizeServerHost,
+    parseEchParams,
+    applyEchToSingboxTls,
+} from '../lib/urlHelpers.js';
 
 // ---- helpers ---------------------------------------------------------------
 
-// 转十进制端口；非法 / 缺失返回 undefined（由上层决定是否丢弃）
-const toPort = (v) => {
-    if (v === undefined || v === null || v === '') return undefined;
-    const n = parseInt(v, 10);
-    return Number.isFinite(n) && n > 0 && n < 65536 ? n : undefined;
-};
-
-// 兼容 url-safe base64（vmess 二维码常见）
-const b64decode = (s) => {
-    const norm = s.replace(/-/g, '+').replace(/_/g, '/');
-    const pad = norm.length % 4 === 0 ? '' : '='.repeat(4 - (norm.length % 4));
-    return atob(norm + pad);
-};
-
-// 安全 decodeURIComponent
-const safeDecode = (s) => {
-    try {
-        return decodeURIComponent(s);
-    } catch {
-        return s;
-    }
-};
-
-// 从 search params 组装 TLS 配置（vless / trojan 通用）
+// 从 search params 组装 TLS 配置（vless / trojan 通用），含 ECH 支持
 const buildTlsFromParams = (params, defaultSni) => {
     const tls = {
         enabled: true,
@@ -35,8 +21,10 @@ const buildTlsFromParams = (params, defaultSni) => {
     };
     const sni = params.sni || params.peer || defaultSni;
     if (sni) tls.server_name = sni;
-    if (params.alpn) tls.alpn = params.alpn.split(',').map((s) => s.trim()).filter(Boolean);
+    if (params.alpn) tls.alpn = splitCsv(params.alpn);
     if (params.fp) tls.utls = { enabled: true, fingerprint: params.fp };
+
+    applyEchToSingboxTls(tls, parseEchParams(params));
     return tls;
 };
 
@@ -57,7 +45,7 @@ const buildTransport = (type, opts) => {
     if (type === 'h2' || type === 'http') {
         const t = { type: 'http' };
         if (opts.path) t.path = opts.path;
-        if (opts.host) t.host = opts.host.split(',').map((s) => s.trim()).filter(Boolean);
+        if (opts.host) t.host = splitCsv(opts.host);
         return t;
     }
     return undefined;
@@ -75,7 +63,7 @@ const parseVmess = (url, tag) => {
     const node = {
         type: 'vmess',
         tag,
-        server: c.add || c.address,
+        server: normalizeServerHost(c.add || c.address),
         server_port: port,
         uuid: c.id,
         alter_id: Number.isFinite(parseInt(c.aid, 10)) ? parseInt(c.aid, 10) : 0,
@@ -92,8 +80,11 @@ const parseVmess = (url, tag) => {
         };
         const sni = c.sni || c.host;
         if (sni) node.tls.server_name = sni;
-        if (c.alpn) node.tls.alpn = String(c.alpn).split(',').map((s) => s.trim()).filter(Boolean);
+        if (c.alpn) node.tls.alpn = splitCsv(String(c.alpn));
         if (c.fp) node.tls.utls = { enabled: true, fingerprint: c.fp };
+
+        // ECH（vmess JSON 字段 ech / ech-config 或别名）
+        applyEchToSingboxTls(node.tls, parseEchParams(c));
     }
     return node;
 };
@@ -106,7 +97,7 @@ const parseVless = (url, tag) => {
     const node = {
         type: 'vless',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
         uuid: safeDecode(url.username),
     };
@@ -120,10 +111,10 @@ const parseVless = (url, tag) => {
     if (transport) node.transport = transport;
 
     if (params.security === 'tls') {
-        node.tls = buildTlsFromParams(params, url.hostname);
+        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname));
     } else if (params.security === 'reality') {
         node.tls = {
-            ...buildTlsFromParams(params, url.hostname),
+            ...buildTlsFromParams(params, normalizeServerHost(url.hostname)),
             reality: {
                 enabled: true,
                 public_key: params.pbk || params.publicKey || '',
@@ -142,7 +133,7 @@ const parseTrojan = (url, tag) => {
     const node = {
         type: 'trojan',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
         password: safeDecode(url.username),
     };
@@ -156,7 +147,7 @@ const parseTrojan = (url, tag) => {
 
     // trojan 默认就是 TLS；仅当显式 security=none 才禁用
     if (params.security !== 'none') {
-        node.tls = buildTlsFromParams(params, url.hostname);
+        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname));
     }
     return node;
 };
@@ -167,9 +158,9 @@ const parseTrojan = (url, tag) => {
 const parseShadowsocks = (url, tag, raw) => {
     let method, password, host, port;
 
-    if (url.hostname) {
+    if (normalizeServerHost(url.hostname)) {
         // 现代格式：userinfo 部分可能是 base64 编码的 method:password
-        host = url.hostname;
+        host = normalizeServerHost(url.hostname);
         port = toPort(url.port);
         const userinfo = safeDecode(url.username);
         if (userinfo.includes(':')) {
@@ -208,7 +199,7 @@ const parseShadowsocks = (url, tag, raw) => {
     return {
         type: 'shadowsocks',
         tag,
-        server: host,
+        server: normalizeServerHost(host),
         server_port: port,
         method,
         password,
@@ -221,7 +212,7 @@ const parseSocks5 = (url, tag) => {
     const node = {
         type: 'socks',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
     };
     if (url.username) {
@@ -238,13 +229,13 @@ const parseTuic = (url, tag) => {
     return {
         type: 'tuic',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
         uuid: safeDecode(url.username),
         password: safeDecode(url.password || ''),
         congestion_control: params.congestion_control || 'bbr',
         udp_relay_mode: params.udp_relay_mode || 'native',
-        tls: buildTlsFromParams(params, url.hostname),
+        tls: buildTlsFromParams(params, normalizeServerHost(url.hostname)),
     };
 };
 
@@ -255,7 +246,7 @@ const parseHysteria2 = (url, tag) => {
     const node = {
         type: 'hysteria2',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
         password: safeDecode(url.username),
     };
@@ -271,7 +262,7 @@ const parseHysteria2 = (url, tag) => {
         node.obfs = { type: params.obfs };
         if (params['obfs-password']) node.obfs.password = params['obfs-password'];
     }
-    node.tls = buildTlsFromParams(params, url.hostname);
+    node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname));
     return node;
 };
 
@@ -282,10 +273,10 @@ const parseAnytls = (url, tag) => {
     return {
         type: 'anytls',
         tag,
-        server: url.hostname,
+        server: normalizeServerHost(url.hostname),
         server_port: port,
         password: safeDecode(url.username),
-        tls: buildTlsFromParams(params, url.hostname),
+        tls: buildTlsFromParams(params, normalizeServerHost(url.hostname)),
     };
 };
 
@@ -302,7 +293,7 @@ const PARSERS = {
 
 // ---- entry -----------------------------------------------------------------
 
-export const parseUrlToNode = (line) => {
+export const parseUrlToSingbox = (line) => {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) return null;
 

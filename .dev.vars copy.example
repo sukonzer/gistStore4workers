@@ -4,4 +4,7 @@
 AUTH_TOKEN="your-long-random-token-at-least-13-chars"
 GIST_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 GIST_ID="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-GIT_TEMPLATE_URL="https://raw.githubusercontent.com/<user>/<repo>/main/template.json"
+GIT_SINGBOX_RAW="https://raw.githubusercontent.com/<user>/<repo>/main/template.json"
+
+# 仅在启用 /mihomo (Clash.Meta) 时需要；模板为 YAML，必须是 raw 链接
+GIT_MIHOMO_RAW="https://raw.githubusercontent.com/<user>/<repo>/main/mihomo-template.yaml"
