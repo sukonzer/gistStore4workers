@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAASYfrAABZ/wD39/cAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACIAAAIgAAAAADMzMAAAAAADMzMzAAAAAAMzMzMAAAAAAzMzMwAAAAADMzMzAAAAAAEyIjEAAAAAAwMjAwAAAAADMzMzAAAAAAAzMzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA//8AAOAPAADwHwAA4A8AAIADAADABwAA4A8AAOAPAADgDwAA4A8AAOAPAADwHwAA+D8AAP//AAD//wAA"
+        rel="icon" type="image/x-icon">
+    <title>工具箱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 2.5rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            opacity: 0.9;
+            margin-top: 0.4rem;
+            font-size: 0.95rem;
+        }
+
+        main {
+            max-width: 720px;
+            width: 100%;
+            margin: 2rem auto 0;
+            padding: 0 1.5rem 3rem;
+            flex: 1;
+        }
+
+        .tool-card {
+            background: #fff;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .tool-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+            color: #222;
+        }
+
+        .tool-card .desc {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 0.4rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 0.75rem 0.9rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.15s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        textarea[readonly] {
+            background: #f8f9fb;
+            color: #333;
+        }
+
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .options label.option {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin: 0;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            padding: 0.5rem 1.1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #444;
+        }
+
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .status {
+            min-height: 1.25rem;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .status.error {
+            color: #c0392b;
+        }
+
+        .status.ok {
+            color: #27ae60;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #bbb;
+            font-size: 0.85rem;
+            margin-top: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>工具箱</h1>
+        <p>轻量在线小工具</p>
+    </header>
+    <main>
+        <section class="tool-card" id="b64-tool">
+            <h2>Base64 解码</h2>
+            <p class="desc">支持标准 Base64 与 URL-safe Base64（<code>-</code> / <code>_</code>），输出 UTF-8 文本。</p>
+
+            <div class="options">
+                <label class="option">
+                    <input type="checkbox" id="url-safe" checked>
+                    自动处理 URL-safe Base64
+                </label>
+                <label class="option">
+                    <input type="checkbox" id="strip-whitespace" checked>
+                    忽略空白字符
+                </label>
+            </div>
+
+            <div class="field">
+                <label for="b64-input">输入（Base64）</label>
+                <textarea id="b64-input" placeholder="粘贴 Base64 字符串…"></textarea>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-primary" id="decode-btn">解码</button>
+                <button type="button" class="btn-secondary" id="clear-btn">清空</button>
+                <button type="button" class="btn-secondary" id="copy-btn">复制结果</button>
+            </div>
+
+            <div class="field">
+                <label for="b64-output">输出（文本）</label>
+                <textarea id="b64-output" readonly placeholder="解码结果将显示在这里…"></textarea>
+            </div>
+
+            <div class="status" id="status" aria-live="polite"></div>
+        </section>
+    </main>
+    <footer>工具箱</footer>
+
+    <script>
+        const input = document.getElementById('b64-input');
+        const output = document.getElementById('b64-output');
+        const status = document.getElementById('status');
+        const urlSafe = document.getElementById('url-safe');
+        const stripWs = document.getElementById('strip-whitespace');
+
+        const setStatus = (msg, type) => {
+            status.textContent = msg;
+            status.className = 'status' + (type ? ' ' + type : '');
+        };
+
+        const normalizeB64 = (raw) => {
+            let s = raw;
+            if (stripWs.checked) s = s.replace(/\s+/g, '');
+            if (urlSafe.checked) s = s.replace(/-/g, '+').replace(/_/g, '/');
+            const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4));
+            return s + pad;
+        };
+
+        const b64ToUtf8 = (b64) => {
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+        };
+
+        const decode = () => {
+            const raw = input.value;
+            if (!raw.trim()) {
+                output.value = '';
+                setStatus('');
+                return;
+            }
+            try {
+                const normalized = normalizeB64(raw);
+                if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) {
+                    throw new Error('包含非法 Base64 字符');
+                }
+                const text = b64ToUtf8(normalized);
+                output.value = text;
+                setStatus('解码成功 · ' + text.length + ' 字符', 'ok');
+            } catch (err) {
+                output.value = '';
+                setStatus('解码失败：' + (err.message || '无效的 Base64'), 'error');
+            }
+        };
+
+        document.getElementById('decode-btn').addEventListener('click', decode);
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            input.value = '';
+            output.value = '';
+            setStatus('');
+            input.focus();
+        });
+        document.getElementById('copy-btn').addEventListener('click', async () => {
+            if (!output.value) return;
+            try {
+                await navigator.clipboard.writeText(output.value);
+                setStatus('已复制到剪贴板', 'ok');
+            } catch {
+                setStatus('复制失败，请手动选择复制', 'error');
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') decode();
+        });
+    </script>
+</body>
+
+</html>

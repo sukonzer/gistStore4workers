@@ -1,4 +1,5 @@
 import BLOG_HTML from './index.html';
+import TOOLS_HTML from './tools.html';
 import { fetchGist } from './fetchResource.js';
 import { parse2singbox } from './parse2singbox/index.js';
 import { parse2mihomo } from './parse2mihomo/index.js';
@@ -94,6 +95,16 @@ export default {
         // 首页：伪装博客
         if (pathname === '/') {
             return new Response(BLOG_HTML, {
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Cache-Control': 'public, max-age=3600',
+                },
+            });
+        }
+
+        // 工具页：无需鉴权
+        if (pathname === '/tools' || pathname === '/tools/') {
+            return new Response(TOOLS_HTML, {
                 headers: {
                     'Content-Type': 'text/html; charset=utf-8',
                     'Cache-Control': 'public, max-age=3600',
