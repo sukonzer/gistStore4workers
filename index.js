@@ -1,8 +1,10 @@
 import BLOG_HTML from './index.html';
 import TOOLS_HTML from './tools.html';
+import SUB_HTML from './sub.html';
 import { fetchGist } from './fetchResource.js';
 import { parse2singbox } from './parse2singbox/index.js';
 import { parse2mihomo } from './parse2mihomo/index.js';
+import { handleSubGenPost, handleSubGenGet } from './api/subGen.js';
 
 // ============================================================
 // 常量
@@ -76,41 +78,72 @@ const yaml = (body, init = {}) =>
         },
     });
 
+const methodNotAllowed = (allow) =>
+    new Response('Method Not Allowed', {
+        status: 405,
+        headers: { Allow: allow.join(', ') },
+    });
+
+/** 方法不在 allow 列表时返回 405，否则返回 null */
+const requireMethods = (method, allow) => {
+    if (allow.includes(method)) return null;
+    return methodNotAllowed(allow);
+};
+
+const htmlResponse = (body, cache = 'public, max-age=3600') =>
+    new Response(body, {
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': cache,
+        },
+    });
+
 // ============================================================
 // Worker 入口
 // ============================================================
 export default {
     async fetch(request, env) {
-        // 仅允许 GET / HEAD
-        if (request.method !== 'GET' && request.method !== 'HEAD') {
-            return new Response('Method Not Allowed', {
-                status: 405,
-                headers: { Allow: 'GET, HEAD' },
-            });
-        }
-
         const url = new URL(request.url);
         const pathname = url.pathname;
+        const method = request.method;
+
+        const READ_METHODS = ['GET', 'HEAD'];
 
         // 首页：伪装博客
         if (pathname === '/') {
-            return new Response(BLOG_HTML, {
-                headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'public, max-age=3600',
-                },
-            });
+            const denied = requireMethods(method, READ_METHODS);
+            if (denied) return denied;
+            return htmlResponse(BLOG_HTML);
         }
 
         // 工具页：无需鉴权
         if (pathname === '/tools' || pathname === '/tools/') {
-            return new Response(TOOLS_HTML, {
-                headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'public, max-age=3600',
-                },
-            });
+            const denied = requireMethods(method, READ_METHODS);
+            if (denied) return denied;
+            return htmlResponse(TOOLS_HTML);
         }
+
+        // /sub UI 与订阅生成（无需 AUTH_TOKEN）
+        if (pathname === '/sub' || pathname === '/sub/') {
+            if (method === 'POST') {
+                return handleSubGenPost(request);
+            }
+            const denied = requireMethods(method, READ_METHODS);
+            if (denied) return denied;
+            return htmlResponse(SUB_HTML);
+        }
+
+        if (pathname === '/sub/singbox' && (method === 'GET' || method === 'HEAD')) {
+            return handleSubGenGet(request, 'singbox');
+        }
+
+        if (pathname === '/sub/mihomo' && (method === 'GET' || method === 'HEAD')) {
+            return handleSubGenGet(request, 'mihomo');
+        }
+
+        // 其余路由仅允许 GET / HEAD
+        const denied = requireMethods(method, READ_METHODS);
+        if (denied) return denied;
 
         // 必要的服务端配置校验（避免 AUTH_TOKEN 未设置时的隐式行为）
         if (!env.AUTH_TOKEN || env.AUTH_TOKEN.length < MIN_TOKEN_LEN) {

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅配置 · SUB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --cyan: #00f5d4;
+            --purple: #7b2ff7;
+            --text: #e8e8f0;
+            --muted: #6b6b80;
+            --danger: #ff4d6d;
+            --glow-cyan: 0 0 20px rgba(0, 245, 212, 0.25);
+            --glow-purple: 0 0 20px rgba(123, 47, 247, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 10% 10%, rgba(123, 47, 247, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 35% at 90% 80%, rgba(0, 245, 212, 0.06) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2.5rem 1.25rem 4rem;
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            margin-top: 0.5rem;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin-bottom: 1.25rem;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.08s; }
+        .card:nth-child(3) { animation-delay: 0.16s; }
+        .card:nth-child(4) { animation-delay: 0.24s; }
+        .card:nth-child(5) { animation-delay: 0.32s; }
+
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--cyan);
+            margin-bottom: 1rem;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            font-size: 0.82rem;
+            color: var(--muted);
+            padding: 0.4rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .radio-group label:has(input:checked) {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .radio-group input {
+            accent-color: var(--cyan);
+        }
+
+        .field {
+            display: none;
+        }
+
+        .field.active {
+            display: block;
+        }
+
+        textarea,
+        input[type="url"],
+        input[type="text"] {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.8rem;
+            padding: 0.75rem;
+            resize: vertical;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        textarea:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--purple);
+            box-shadow: var(--glow-purple);
+        }
+
+        textarea {
+            min-height: 140px;
+        }
+
+        #templateLocal {
+            min-height: 340px;
+        }
+
+        .hint {
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-top: 0.4rem;
+        }
+
+        .btn-generate {
+            width: 100%;
+            padding: 0.9rem;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            animation: fadeUp 0.6s ease 0.4s both;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 24px rgba(0, 245, 212, 0.3);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .output {
+            display: none;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .output.visible {
+            display: block;
+        }
+
+        .output-block {
+            margin-bottom: 1rem;
+        }
+
+        .output-label {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .output-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .output-row input,
+        .output-row textarea {
+            flex: 1;
+            min-height: unset;
+        }
+
+        .btn-copy {
+            flex-shrink: 0;
+            padding: 0.5rem 0.85rem;
+            font-family: inherit;
+            font-size: 0.72rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            border-color: var(--cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .preview-box {
+            max-height: 320px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .hint-output {
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            padding: 0.6rem 0.75rem;
+            border-left: 2px solid var(--purple);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            box-shadow: var(--glow-cyan);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .err-msg {
+            color: var(--danger);
+            font-size: 0.82rem;
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .err-msg.visible {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>SUB  GEN</h1>
+            <p>节点 + 模板 → sing-box / mihomo 订阅配置生成器</p>
+        </header>
+
+        <!-- 节点配置 -->
+        <section class="card">
+            <div class="card-title">01 · 节点配置</div>
+            <div class="radio-group" id="nodesSourceGroup">
+                <label><input type="radio" name="nodesSource" value="local" checked> 本地配置</label>
+                <label><input type="radio" name="nodesSource" value="remote"> 远程 URI</label>
+            </div>
+            <div class="field active" id="nodesLocalField">
+                <textarea id="nodesLocal" placeholder="vmess://...&#10;vless://...&#10;trojan://..."></textarea>
+                <p class="hint">每行一条节点链接，支持 vmess / vless / trojan / ss 等</p>
+            </div>
+            <div class="field" id="nodesRemoteField">
+                <input type="url" id="nodesRemote" placeholder="https://example.com/subscribe/nodes">
+                <p class="hint">通用节点订阅地址，支持 base64 编码体</p>
+            </div>
+        </section>
+
+        <!-- 核心类型 -->
+        <section class="card">
+            <div class="card-title">02 · 核心类型</div>
+            <div class="radio-group">
+                <label><input type="radio" name="platform" value="singbox" checked> sing-box</label>
+                <label><input type="radio" name="platform" value="mihomo"> mihomo</label>
+            </div>
+        </section>
+
+        <!-- 模板来源 -->
+        <section class="card">
+            <div class="card-title">03 · 模板来源</div>
+            <div class="radio-group" id="templateSourceGroup">
+                <label><input type="radio" name="templateSource" value="local"> 本地模板</label>
+                <label><input type="radio" name="templateSource" value="remote" checked> 远程 raw 地址</label>
+            </div>
+            <div class="field" id="templateLocalField">
+                <textarea id="templateLocal" placeholder="粘贴 sing-box 模板 JSON…"></textarea>
+                <p class="hint" id="templateLocalHint"></p>
+            </div>
+            <div class="field active" id="templateRemoteField">
+                <input type="url" id="templateRemote" placeholder="https://raw.githubusercontent.com/…/template.json">
+                <p class="hint" id="templateRemoteHint">必须是 raw 链接，不可用 GitHub blob 页面地址</p>
+            </div>
+        </section>
+
+        <button class="btn-generate" id="btnGenerate">生成配置</button>
+        <p class="err-msg" id="errMsg"></p>
+
+        <!-- 输出 -->
+        <section class="card output" id="outputSection">
+            <div class="card-title">04 · 配置输出</div>
+
+            <p class="hint-output" id="localHint" style="display:none"></p>
+
+            <div class="output-block" id="subUrlBlock">
+                <div class="output-label">
+                    <span>订阅地址</span>
+                </div>
+                <div class="output-row">
+                    <input type="text" id="subUrl" readonly>
+                    <button class="btn-copy" data-target="subUrl">复制</button>
+                </div>
+            </div>
+
+            <div class="output-block">
+                <div class="output-label">
+                    <span>配置预览</span>
+                    <button class="btn-copy" data-target="preview">复制</button>
+                </div>
+                <pre class="preview-box" id="preview"></pre>
+            </div>
+        </section>
+    </div>
+
+    <div class="toast" id="toast">已复制</div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        const toggleField = (source, localId, remoteId) => {
+            const isLocal = source === 'local';
+            $(localId).classList.toggle('active', isLocal);
+            $(remoteId).classList.toggle('active', !isLocal);
+        };
+
+        const getPlatform = () =>
+            document.querySelector('input[name="platform"]:checked').value;
+
+        const TPL_PLACEHOLDERS = {
+            singbox: {
+                remote: 'https://raw.githubusercontent.com/…/template.json',
+                local: `{
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "PROXY",
+      "outbounds": ["{all}"]
+    },
+    {
+      "type": "urltest",
+      "tag": "AUTO-HK",
+      "outbounds": ["{all}"],
+      "filter": [
+        { "action": "include", "keywords": ["HK", "香港"] },
+        { "action": "exclude", "keywords": ["试用|trial"] }
+      ]
+    }
+  ]
+}`,
+                localHint: '示例：sing-box 模板为 JSON，需包含 outbounds 数组',
+                remoteHint: 'sing-box 模板须为 JSON 的 raw 直链（.json）',
+            },
+            mihomo: {
+                remote: 'https://raw.githubusercontent.com/…/template.yaml',
+                local: `mixed-port: 7890
+mode: rule
+log-level: info
+
+dns:
+  enable: true
+  nameserver:
+    - https://1.1.1.1/dns-query
+
+proxy-groups:
+  - name: PROXY
+    type: select
+    include-all-proxies: true
+
+  - name: AUTO-HK
+    type: url-test
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    include-all-proxies: true
+    filter: "(?i)港|hk|hongkong"
+    exclude-filter: "试用|trial"
+
+rules:
+  - MATCH,PROXY`,
+                localHint: '示例：mihomo 模板为 YAML，根节点为 mapping',
+                remoteHint: 'mihomo 模板须为 YAML 的 raw 直链（.yaml）',
+            },
+        };
+
+        const updateTemplatePlaceholders = () => {
+            const ph = TPL_PLACEHOLDERS[getPlatform()] || TPL_PLACEHOLDERS.singbox;
+            $('templateRemote').placeholder = ph.remote;
+            $('templateLocal').placeholder = ph.local;
+            $('templateLocalHint').textContent = ph.localHint;
+            $('templateRemoteHint').textContent = ph.remoteHint;
+        };
+
+        document.querySelectorAll('input[name="platform"]').forEach((el) => {
+            el.addEventListener('change', updateTemplatePlaceholders);
+        });
+
+        document.querySelectorAll('input[name="nodesSource"]').forEach((el) => {
+            el.addEventListener('change', () =>
+                toggleField(el.value, 'nodesLocalField', 'nodesRemoteField'));
+        });
+
+        document.querySelectorAll('input[name="templateSource"]').forEach((el) => {
+            el.addEventListener('change', () =>
+                toggleField(el.value, 'templateLocalField', 'templateRemoteField'));
+        });
+
+        const showToast = () => {
+            const t = $('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
+        };
+
+        document.querySelectorAll('.btn-copy').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const target = btn.dataset.target;
+                const text = target === 'preview'
+                    ? $('preview').textContent
+                    : $(target === 'subUrl' ? 'subUrl' : target).value;
+                if (!text) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast();
+                } catch {
+                    /* fallback ignored */
+                }
+            });
+        });
+
+        updateTemplatePlaceholders();
+
+        $('btnGenerate').addEventListener('click', async () => {
+            const btn = $('btnGenerate');
+            const errMsg = $('errMsg');
+            errMsg.classList.remove('visible');
+            errMsg.textContent = '';
+
+            const nodesSource = document.querySelector('input[name="nodesSource"]:checked').value;
+            const platform = document.querySelector('input[name="platform"]:checked').value;
+            const templateSource = document.querySelector('input[name="templateSource"]:checked').value;
+
+            const body = {
+                nodesSource,
+                nodesLocal: nodesSource === 'local' ? $('nodesLocal').value : null,
+                nodesRemote: nodesSource === 'remote' ? $('nodesRemote').value : null,
+                platform,
+                templateSource,
+                templateLocal: templateSource === 'local' ? $('templateLocal').value : null,
+                templateRemote: templateSource === 'remote' ? $('templateRemote').value : null,
+            };
+
+            btn.disabled = true;
+            btn.textContent = '生成中…';
+
+            try {
+                const resp = await fetch('/sub', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    errMsg.textContent = data.error || '生成失败';
+                    errMsg.classList.add('visible');
+                    return;
+                }
+
+                $('outputSection').classList.add('visible');
+                $('preview').textContent = data.content;
+
+                const subUrlBlock = $('subUrlBlock');
+                const localHint = $('localHint');
+
+                if (data.subscriptionUrl) {
+                    subUrlBlock.style.display = 'block';
+                    localHint.style.display = 'none';
+                    $('subUrl').value = data.subscriptionUrl;
+                } else {
+                    subUrlBlock.style.display = 'none';
+                    localHint.style.display = 'block';
+                    localHint.textContent = data.hint || '本地配置请复制下方预览到客户端';
+                }
+            } catch (e) {
+                errMsg.textContent = '请求失败：' + (e.message || '网络错误');
+                errMsg.classList.add('visible');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '生成配置';
+            }
+        });
+    </script>
+</body>
+
+</html>
