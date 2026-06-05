@@ -515,11 +515,53 @@ rules:
 
         updateTemplatePlaceholders();
 
+        const assertHttpUrl = (url, label) => {
+            if (!url) return `请填写${label}`;
+            let parsed;
+            try {
+                parsed = new URL(url);
+            } catch {
+                return `${label}格式无效`;
+            }
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                return `${label}须为 http/https 地址`;
+            }
+            return null;
+        };
+
+        const validateFormClient = () => {
+            const nodesSource = document.querySelector('input[name="nodesSource"]:checked').value;
+            const templateSource = document.querySelector('input[name="templateSource"]:checked').value;
+
+            if (nodesSource === 'local' && !$('nodesLocal').value.trim()) {
+                return '请填写本地节点配置';
+            }
+            if (nodesSource === 'remote') {
+                const err = assertHttpUrl($('nodesRemote').value.trim(), '远程节点 URI');
+                if (err) return err;
+            }
+            if (templateSource === 'local' && !$('templateLocal').value.trim()) {
+                return '请填写本地模板';
+            }
+            if (templateSource === 'remote') {
+                const err = assertHttpUrl($('templateRemote').value.trim(), '远程模板地址');
+                if (err) return err;
+            }
+            return null;
+        };
+
         $('btnGenerate').addEventListener('click', async () => {
             const btn = $('btnGenerate');
             const errMsg = $('errMsg');
             errMsg.classList.remove('visible');
             errMsg.textContent = '';
+
+            const validationError = validateFormClient();
+            if (validationError) {
+                errMsg.textContent = validationError;
+                errMsg.classList.add('visible');
+                return;
+            }
 
             const nodesSource = document.querySelector('input[name="nodesSource"]:checked').value;
             const platform = document.querySelector('input[name="platform"]:checked').value;
