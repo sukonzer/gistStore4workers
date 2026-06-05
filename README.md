@@ -54,9 +54,11 @@ sing-box 模板 `outbounds` 可用 `"{all}"` 占位符；mihomo 模板用 `inclu
 当**节点与模板均为远程 URI** 时，会额外生成可导入客户端的订阅地址：
 
 ```
-/sub/singbox?ns=remote&nr=<节点URL>&ts=remote&tr=<模板URL>
-/sub/mihomo?ns=remote&nr=<节点URL>&ts=remote&tr=<模板URL>
+/sub/singbox?nr=<节点URL>&tr=<模板URL>
+/sub/mihomo?nr=<节点URL>&tr=<模板URL>
 ```
+
+`nr` 为节点订阅地址，`tr` 为模板 raw 地址；
 
 含本地内容时只返回配置预览，需手动复制到客户端。
 
