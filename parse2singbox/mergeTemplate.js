@@ -41,10 +41,10 @@ function filterProxies(proxies, filter) {
 const deepClone = (obj) =>
     typeof structuredClone === 'function' ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
 
+const DIRECT_OUTBOUND = { tag: 'DIRECT', type: 'direct' };
+
 export const mergeTemplate = (template, nodes) => {
     const config = deepClone(template);
-    const fallback = { tag: 'COMPATIBLE', type: 'direct' };
-    let hasFallback = false;
 
     // 1) 注入全部节点
     config.outbounds.push(...nodes);
@@ -57,16 +57,16 @@ export const mergeTemplate = (template, nodes) => {
         }
     });
 
-    // 3) 空 outbounds 容错
-    config.outbounds.forEach((obd) => {
-        if (Array.isArray(obd.outbounds) && obd.outbounds.length === 0) {
-            if (!hasFallback) {
-                config.outbounds.push(fallback);
-                hasFallback = true;
+    // 3) 配置里没有 direct 出站时才补全，并修正空 outbounds 引用
+    if (!config.outbounds.some((obd) => obd.type === 'direct')) {
+        config.outbounds.push(DIRECT_OUTBOUND);
+
+        config.outbounds.forEach((obd) => {
+            if (Array.isArray(obd.outbounds) && obd.outbounds.length === 0) {
+                obd.outbounds.push(DIRECT_OUTBOUND);
             }
-            obd.outbounds.push(fallback.tag);
-        }
-    });
+        });
+    }
 
     return config;
 };
