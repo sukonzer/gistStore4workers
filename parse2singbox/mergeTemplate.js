@@ -60,13 +60,13 @@ export const mergeTemplate = (template, nodes) => {
     // 3) 配置里没有 direct 出站时才补全，并修正空 outbounds 引用
     if (!config.outbounds.some((obd) => obd.type === 'direct')) {
         config.outbounds.push(fallback);
-
-        config.outbounds.forEach((obd) => {
-            if (Array.isArray(obd.outbounds) && obd.outbounds.length === 0) {
-                obd.outbounds.push(fallback.tag);
-            }
-        });
     }
+
+    config.outbounds.forEach((obd) => {
+        if (Array.isArray(obd.outbounds) && obd.outbounds.length === 0) {
+            obd.outbounds.push(fallback.tag);
+        }
+    });
 
     return config;
 };
