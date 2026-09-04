@@ -6,6 +6,7 @@ import {
     b64decode,
     safeDecode,
     splitCsv,
+    firstCsv,
     normalizeServerHost,
     parseEchParams,
     applyEchToSingboxTls,
@@ -21,7 +22,8 @@ const buildTlsFromParams = (params, defaultSni) => {
     };
     const sni = params.sni || params.peer || defaultSni;
     if (sni) tls.server_name = sni;
-    if (params.alpn) tls.alpn = splitCsv(params.alpn);
+    const alpn = firstCsv(params.alpn);
+    if (alpn) tls.alpn = [alpn];
     if (params.fp) tls.utls = { enabled: true, fingerprint: params.fp };
 
     applyEchToSingboxTls(tls, parseEchParams(params));
@@ -80,7 +82,8 @@ const parseVmess = (url, tag) => {
         };
         const sni = c.sni || c.host;
         if (sni) node.tls.server_name = sni;
-        if (c.alpn) node.tls.alpn = splitCsv(String(c.alpn));
+        const alpn = firstCsv(String(c.alpn));
+        if (alpn) node.tls.alpn = [alpn];
         if (c.fp) node.tls.utls = { enabled: true, fingerprint: c.fp };
 
         // ECH（vmess JSON 字段 ech / ech-config 或别名）
