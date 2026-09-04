@@ -57,13 +57,13 @@ export const mergeTemplate = (template, nodes) => {
         }
     });
 
-    // 3) 配置里没有 direct 出站时才补全，并修正空 outbounds 引用
-    if (!config.outbounds.some((obd) => obd.type === 'direct')) {
-        config.outbounds.push(fallback);
-    }
-
+    // 3) 空 outbounds 容错
     config.outbounds.forEach((obd) => {
         if (Array.isArray(obd.outbounds) && obd.outbounds.length === 0) {
+            if (!hasFallback) {
+                config.outbounds.push(fallback);
+                hasFallback = true;
+            }
             obd.outbounds.push(fallback.tag);
         }
     });
