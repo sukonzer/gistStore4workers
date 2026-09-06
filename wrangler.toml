@@ -1,6 +1,7 @@
 name = "gist-store-worker"
 main = "index.js"
 compatibility_date = "2024-09-23"
+compatibility_flags = ["global_fetch_strictly_public"]
 
 # 让 *.html 可以作为文本模块直接 import：
 #   import BLOG_HTML from './index.html';
