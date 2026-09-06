@@ -37,7 +37,7 @@
 
 模板须为 raw 直链（如 `raw.githubusercontent.com` 或 jsDelivr），不可用 GitHub blob 页面地址。
 
-sing-box 模板 `outbounds` 可用 `"{all}"` 占位符；mihomo 模板用 `include-all-proxies` + `filter` 分组。节点 URL 支持 ECH 参数（`ech=1`、`ech-config` 等），详见 `parse2singbox/parseUrl2Singbox.js`。
+sing-box 模板 `outbounds` 可用 `"{all}"` 占位符。需要筛选节点时，在模板根节点设置 `include`、`exclude` 数组；数组字符串会作为不区分大小写的正则源码，例如 `"HK|香港"`，也可用 `"/模式/flags"` 指定 flags，例如 `"/^(HK|香港)/i"`。如某个出站项需要覆盖全局规则，也可在该出站项设置同名字段。mihomo 模板用 `include-all-proxies` + `filter` 分组。节点 URL 支持 ECH 参数（`ech=1`、`ech-config` 等），详见 `parse2singbox/parseUrl2Singbox.js`。
 
 ---
 

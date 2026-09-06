@@ -418,6 +418,8 @@
             singbox: {
                 remote: 'https://raw.githubusercontent.com/…/template.json',
                 local: `{
+  "include": ["HK|香港"],
+  "exclude": ["试用|trial"],
   "outbounds": [
     {
       "type": "selector",
@@ -427,11 +429,7 @@
     {
       "type": "urltest",
       "tag": "AUTO-HK",
-      "outbounds": ["{all}"],
-      "filter": [
-        { "action": "include", "keywords": ["HK", "香港"] },
-        { "action": "exclude", "keywords": ["试用|trial"] }
-      ]
+      "outbounds": ["{all}"]
     }
   ]
 }`,

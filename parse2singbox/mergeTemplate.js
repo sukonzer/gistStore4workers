@@ -2,30 +2,35 @@
 // 模板合并
 // ============================================================
 
-// 过滤代理：先 include（任意命中保留；无 include 规则则全部进入），再 exclude（命中即剔除）
-function filterProxies(proxies, filter) {
-    if (!Array.isArray(filter) || filter.length === 0) {
-        return proxies.map((p) => p.tag);
-    }
+// 过滤代理：先 include（任意命中保留；无 include 规则则全部进入），再 exclude（命中即剔除）。
+// 普通字符串作为不区分大小写的正则源码；/模式/flags 形式可指定 flags。
+function filterProxies(proxies, include, exclude) {
+    const compileRules = (rules) =>
+        (Array.isArray(rules) ? rules : [])
+            .filter((rule) => typeof rule === 'string' || rule instanceof RegExp)
+            .map((rule) => {
+                if (rule instanceof RegExp) {
+                    return new RegExp(rule.source, rule.flags.replace(/[gy]/g, ''));
+                }
 
-    const includes = filter.filter((f) => f.action === 'include' && Array.isArray(f.keywords));
-    const excludes = filter.filter((f) => f.action === 'exclude' && Array.isArray(f.keywords));
+                const regexLiteral = /^\/(.*)\/([a-z]*)$/.exec(rule);
+                if (regexLiteral) {
+                    try {
+                        return new RegExp(regexLiteral[1], regexLiteral[2].replace(/[gy]/g, ''));
+                    } catch {
+                        // 非法正则退化为字面量匹配，避免一条规则导致整个订阅生成失败。
+                    }
+                }
 
-    const compileKeywords = (rules) =>
-        rules
-            .flatMap((r) => r.keywords)
-            .filter(Boolean)
-            .map((kw) => {
                 try {
-                    return new RegExp(kw, 'i');
+                    return new RegExp(rule, 'i');
                 } catch {
-                    // 关键词若为非法正则，则退化为字面量匹配
-                    return new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                    return new RegExp(rule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
                 }
             });
 
-    const includeRes = compileKeywords(includes);
-    const excludeRes = compileKeywords(excludes);
+    const includeRes = compileRules(include);
+    const excludeRes = compileRules(exclude);
 
     return proxies
         .filter((p) => {
@@ -45,6 +50,11 @@ export const mergeTemplate = (template, nodes) => {
     const config = deepClone(template);
     const fallback = { tag: 'COMPATIBLE', type: 'direct' };
     let hasFallback = false;
+    const globalInclude = config.include;
+    const globalExclude = config.exclude;
+
+    delete config.include;
+    delete config.exclude;
 
     // 1) 注入全部节点
     config.outbounds.push(...nodes);
@@ -52,7 +62,13 @@ export const mergeTemplate = (template, nodes) => {
     // 2) {all} 占位替换
     config.outbounds.forEach((obd) => {
         if (Array.isArray(obd.outbounds) && obd.outbounds.includes('{all}')) {
-            obd.outbounds = filterProxies(nodes, obd.filter);
+            obd.outbounds = filterProxies(
+                nodes,
+                obd.include ?? globalInclude,
+                obd.exclude ?? globalExclude,
+            );
+            delete obd.include;
+            delete obd.exclude;
             delete obd.filter;
         }
     });
