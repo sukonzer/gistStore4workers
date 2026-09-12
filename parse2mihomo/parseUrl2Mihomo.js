@@ -70,8 +70,10 @@ const parseVmess = (url, name) => {
     const port = toPort(c.port);
     if (!port) return null;
 
+    // VMess 的备注位于 Base64 JSON 内的 ps 字段；优先使用它覆盖 URL fragment。
+    const vmessName = typeof c.ps === 'string' && c.ps.trim() ? safeDecode(c.ps).trim() : name;
     const node = {
-        name,
+        name: vmessName,
         type: 'vmess',
         server: normalizeServerHost(c.add || c.address),
         port,
