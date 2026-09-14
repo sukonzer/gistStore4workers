@@ -9,11 +9,7 @@
         rel="icon" type="image/x-icon">
     <title>工具箱</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -31,18 +27,8 @@
             padding: 2.5rem 1rem;
             text-align: center;
         }
-
-        header h1 {
-            font-size: 2rem;
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
-
-        header p {
-            opacity: 0.9;
-            margin-top: 0.4rem;
-            font-size: 0.95rem;
-        }
+        header h1 { font-size: 2rem; font-weight: 300; letter-spacing: 2px; }
+        header p  { opacity: 0.9; margin-top: 0.4rem; font-size: 0.95rem; }
 
         main {
             max-width: 720px;
@@ -52,21 +38,49 @@
             flex: 1;
         }
 
+        /* ── 卡片 ── */
         .tool-card {
             background: #fff;
-            padding: 1.75rem;
-            margin-bottom: 1.5rem;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
         }
 
-        .tool-card h2 {
-            font-size: 1.25rem;
-            margin-bottom: 0.25rem;
-            color: #222;
+        /* ── Tab 栏 ── */
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.85rem 1rem;
+            background: none;
+            border: none;
+            border-radius: 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #888;
+            cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+            position: relative;
+        }
+        .tab-btn:hover { color: #555; background: #fafafa; }
+        .tab-btn.active { color: #667eea; }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .tool-card .desc {
+        /* ── Tab 内容 ── */
+        .tab-panel { display: none; padding: 1.75rem; }
+        .tab-panel.active { display: block; }
+
+        .desc {
             font-size: 0.85rem;
             color: #888;
             margin-bottom: 1.25rem;
@@ -92,25 +106,15 @@
             resize: vertical;
             transition: border-color 0.15s;
         }
-
         textarea:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            box-shadow: 0 0 0 3px rgba(102,126,234,.15);
         }
+        textarea[readonly] { background: #f8f9fb; color: #333; }
 
-        textarea[readonly] {
-            background: #f8f9fb;
-            color: #333;
-        }
-
-        .field {
-            margin-bottom: 1rem;
-        }
-
-        .field:last-child {
-            margin-bottom: 0;
-        }
+        .field { margin-bottom: 1rem; }
+        .field:last-child { margin-bottom: 0; }
 
         .options {
             display: flex;
@@ -120,7 +124,6 @@
             font-size: 0.85rem;
             color: #555;
         }
-
         .options label.option {
             display: flex;
             align-items: center;
@@ -145,39 +148,14 @@
             cursor: pointer;
             transition: opacity 0.15s, transform 0.1s;
         }
+        button:active { transform: scale(0.98); }
+        .btn-primary  { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; }
+        .btn-secondary { background: #f0f0f0; color: #444; }
+        .btn-primary:hover, .btn-secondary:hover { opacity: 0.9; }
 
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #fff;
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #444;
-        }
-
-        .btn-primary:hover,
-        .btn-secondary:hover {
-            opacity: 0.9;
-        }
-
-        .status {
-            min-height: 1.25rem;
-            font-size: 0.8rem;
-            margin-top: 0.5rem;
-        }
-
-        .status.error {
-            color: #c0392b;
-        }
-
-        .status.ok {
-            color: #27ae60;
-        }
+        .status { min-height: 1.25rem; font-size: 0.8rem; margin-top: 0.5rem; }
+        .status.error { color: #c0392b; }
+        .status.ok    { color: #27ae60; }
 
         footer {
             text-align: center;
@@ -194,53 +172,108 @@
         <h1>工具箱</h1>
         <p>轻量在线小工具</p>
     </header>
+
     <main>
-        <section class="tool-card" id="b64-tool">
-            <h2>Base64 解码</h2>
-            <p class="desc">支持标准 Base64 与 URL-safe Base64（<code>-</code> / <code>_</code>），输出 UTF-8 文本。</p>
-
-            <div class="options">
-                <label class="option">
-                    <input type="checkbox" id="url-safe" checked>
-                    自动处理 URL-safe Base64
-                </label>
-                <label class="option">
-                    <input type="checkbox" id="strip-whitespace" checked>
-                    忽略空白字符
-                </label>
+        <div class="tool-card">
+            <!-- Tab 栏 -->
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="decode">Base64 解码</button>
+                <button class="tab-btn"        data-tab="encode">Base64 编码</button>
             </div>
 
-            <div class="field">
-                <label for="b64-input">输入（Base64）</label>
-                <textarea id="b64-input" placeholder="粘贴 Base64 字符串…"></textarea>
+            <!-- 解码面板 -->
+            <div class="tab-panel active" id="panel-decode">
+                <p class="desc">支持标准 Base64 与 URL-safe Base64（<code>-</code> / <code>_</code>），输出 UTF-8 文本。</p>
+
+                <div class="options">
+                    <label class="option">
+                        <input type="checkbox" id="url-safe" checked>
+                        自动处理 URL-safe Base64
+                    </label>
+                    <label class="option">
+                        <input type="checkbox" id="strip-whitespace" checked>
+                        忽略空白字符
+                    </label>
+                </div>
+
+                <div class="field">
+                    <label for="b64-input">输入（Base64）</label>
+                    <textarea id="b64-input" placeholder="粘贴 Base64 字符串…"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn-primary"   id="decode-btn">解码</button>
+                    <button type="button" class="btn-secondary" id="dec-clear-btn">清空</button>
+                    <button type="button" class="btn-secondary" id="dec-copy-btn">复制结果</button>
+                </div>
+
+                <div class="field">
+                    <label for="b64-output">输出（文本）</label>
+                    <textarea id="b64-output" readonly placeholder="解码结果将显示在这里…"></textarea>
+                </div>
+
+                <div class="status" id="dec-status" aria-live="polite"></div>
             </div>
 
-            <div class="actions">
-                <button type="button" class="btn-primary" id="decode-btn">解码</button>
-                <button type="button" class="btn-secondary" id="clear-btn">清空</button>
-                <button type="button" class="btn-secondary" id="copy-btn">复制结果</button>
-            </div>
+            <!-- 编码面板 -->
+            <div class="tab-panel" id="panel-encode">
+                <p class="desc">将文本编码为 Base64，可选输出 URL-safe 格式（<code>+</code> → <code>-</code>，<code>/</code> → <code>_</code>）。</p>
 
-            <div class="field">
-                <label for="b64-output">输出（文本）</label>
-                <textarea id="b64-output" readonly placeholder="解码结果将显示在这里…"></textarea>
-            </div>
+                <div class="options">
+                    <label class="option">
+                        <input type="checkbox" id="enc-url-safe" checked>
+                        输出 URL-safe Base64
+                    </label>
+                    <label class="option">
+                        <input type="checkbox" id="enc-strip-padding">
+                        去掉末尾 <code>=</code> 填充
+                    </label>
+                </div>
 
-            <div class="status" id="status" aria-live="polite"></div>
-        </section>
+                <div class="field">
+                    <label for="enc-input">输入（文本）</label>
+                    <textarea id="enc-input" placeholder="输入要编码的文本…"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn-primary"   id="encode-btn">编码</button>
+                    <button type="button" class="btn-secondary" id="enc-clear-btn">清空</button>
+                    <button type="button" class="btn-secondary" id="enc-copy-btn">复制结果</button>
+                </div>
+
+                <div class="field">
+                    <label for="enc-output">输出（Base64）</label>
+                    <textarea id="enc-output" readonly placeholder="编码结果将显示在这里…"></textarea>
+                </div>
+
+                <div class="status" id="enc-status" aria-live="polite"></div>
+            </div>
+        </div>
     </main>
+
     <footer>工具箱</footer>
 
     <script>
-        const input = document.getElementById('b64-input');
-        const output = document.getElementById('b64-output');
-        const status = document.getElementById('status');
-        const urlSafe = document.getElementById('url-safe');
-        const stripWs = document.getElementById('strip-whitespace');
+        /* ── Tab 切换 ── */
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+            });
+        });
 
-        const setStatus = (msg, type) => {
-            status.textContent = msg;
-            status.className = 'status' + (type ? ' ' + type : '');
+        /* ── 解码 ── */
+        const decInput  = document.getElementById('b64-input');
+        const decOutput = document.getElementById('b64-output');
+        const decStatus = document.getElementById('dec-status');
+        const urlSafe   = document.getElementById('url-safe');
+        const stripWs   = document.getElementById('strip-whitespace');
+
+        const setDecStatus = (msg, type) => {
+            decStatus.textContent = msg;
+            decStatus.className = 'status' + (type ? ' ' + type : '');
         };
 
         const normalizeB64 = (raw) => {
@@ -259,46 +292,75 @@
         };
 
         const decode = () => {
-            const raw = input.value;
-            if (!raw.trim()) {
-                output.value = '';
-                setStatus('');
-                return;
-            }
+            const raw = decInput.value;
+            if (!raw.trim()) { decOutput.value = ''; setDecStatus(''); return; }
             try {
                 const normalized = normalizeB64(raw);
-                if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) {
-                    throw new Error('包含非法 Base64 字符');
-                }
+                if (!/^[A-Za-z0-9+/=]+$/.test(normalized)) throw new Error('包含非法 Base64 字符');
                 const text = b64ToUtf8(normalized);
-                output.value = text;
-                setStatus('解码成功 · ' + text.length + ' 字符', 'ok');
+                decOutput.value = text;
+                setDecStatus('解码成功 · ' + text.length + ' 字符', 'ok');
             } catch (err) {
-                output.value = '';
-                setStatus('解码失败：' + (err.message || '无效的 Base64'), 'error');
+                decOutput.value = '';
+                setDecStatus('解码失败：' + (err.message || '无效的 Base64'), 'error');
             }
         };
 
         document.getElementById('decode-btn').addEventListener('click', decode);
-        document.getElementById('clear-btn').addEventListener('click', () => {
-            input.value = '';
-            output.value = '';
-            setStatus('');
-            input.focus();
+        document.getElementById('dec-clear-btn').addEventListener('click', () => {
+            decInput.value = ''; decOutput.value = ''; setDecStatus(''); decInput.focus();
         });
-        document.getElementById('copy-btn').addEventListener('click', async () => {
-            if (!output.value) return;
-            try {
-                await navigator.clipboard.writeText(output.value);
-                setStatus('已复制到剪贴板', 'ok');
-            } catch {
-                setStatus('复制失败，请手动选择复制', 'error');
-            }
+        document.getElementById('dec-copy-btn').addEventListener('click', async () => {
+            if (!decOutput.value) return;
+            try { await navigator.clipboard.writeText(decOutput.value); setDecStatus('已复制到剪贴板', 'ok'); }
+            catch { setDecStatus('复制失败，请手动选择复制', 'error'); }
         });
+        decInput.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') decode(); });
 
-        input.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') decode();
+        /* ── 编码 ── */
+        const encInput    = document.getElementById('enc-input');
+        const encOutput   = document.getElementById('enc-output');
+        const encStatus   = document.getElementById('enc-status');
+        const encUrlSafe  = document.getElementById('enc-url-safe');
+        const encStripPad = document.getElementById('enc-strip-padding');
+
+        const setEncStatus = (msg, type) => {
+            encStatus.textContent = msg;
+            encStatus.className = 'status' + (type ? ' ' + type : '');
+        };
+
+        const utf8ToB64 = (text) => {
+            const bytes = new TextEncoder().encode(text);
+            let bin = '';
+            bytes.forEach(b => bin += String.fromCharCode(b));
+            return btoa(bin);
+        };
+
+        const encode = () => {
+            const raw = encInput.value;
+            if (!raw) { encOutput.value = ''; setEncStatus(''); return; }
+            try {
+                let result = utf8ToB64(raw);
+                if (encUrlSafe.checked)  result = result.replace(/\+/g, '-').replace(/\//g, '_');
+                if (encStripPad.checked) result = result.replace(/=+$/, '');
+                encOutput.value = result;
+                setEncStatus('编码成功 · ' + result.length + ' 字符', 'ok');
+            } catch (err) {
+                encOutput.value = '';
+                setEncStatus('编码失败：' + (err.message || '未知错误'), 'error');
+            }
+        };
+
+        document.getElementById('encode-btn').addEventListener('click', encode);
+        document.getElementById('enc-clear-btn').addEventListener('click', () => {
+            encInput.value = ''; encOutput.value = ''; setEncStatus(''); encInput.focus();
         });
+        document.getElementById('enc-copy-btn').addEventListener('click', async () => {
+            if (!encOutput.value) return;
+            try { await navigator.clipboard.writeText(encOutput.value); setEncStatus('已复制到剪贴板', 'ok'); }
+            catch { setEncStatus('复制失败，请手动选择复制', 'error'); }
+        });
+        encInput.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') encode(); });
     </script>
 </body>
 
