@@ -63,8 +63,12 @@ const applyTransport = (out, type, opts) => {
 
 // ---- parsers ---------------------------------------------------------------
 
-const parseVmess = (url, name) => {
-    const jsonStr = b64decode(url.pathname.replace(/^\/+/, '') || url.host);
+const parseVmess = (url, name, raw) => {
+    // vmess:// 不是标准 scheme，new URL() 会把 base64 里的 ? 截成 search、
+    // / 截成 pathname 边界，导致 base64 残缺而 JSON.parse 失败。
+    // 直接从原始字符串取 vmess:// 之后的完整 base64，彻底绕开此问题。
+    const base64 = raw.slice('vmess://'.length).trim();
+    const jsonStr = b64decode(base64);
     const c = JSON.parse(jsonStr);
 
     const port = toPort(c.port);

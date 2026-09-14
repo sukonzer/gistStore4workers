@@ -28,7 +28,7 @@ export const parse2mihomo = async ({ GIST_TOKEN, GIST_ID, GIT_MIHOMO_RAW }, type
     }
 
     const proxies = rawNodes
-        .split('\n')
+        .split(/\r?\n/)
         .map((l) => l.trim())
         .filter(Boolean)
         .map(parseUrlToMihomo)

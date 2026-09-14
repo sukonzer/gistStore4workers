@@ -20,7 +20,7 @@ export const parse2singbox = async ({ GIST_TOKEN, GIST_ID, GIT_SINGBOX_RAW }, ty
     }
 
     const nodes = rawNodes
-        .split('\n')
+        .split(/\r?\n/)
         .map((l) => l.trim())
         .filter(Boolean)
         .map(parseUrlToSingbox)
