@@ -15,7 +15,7 @@ import {
 // ---- helpers ---------------------------------------------------------------
 
 // 从 search params 组装 TLS 配置（vless / trojan 通用），含 ECH 支持
-const buildTlsFromParams = (params, defaultSni) => {
+const buildTlsFromParams = (params, defaultSni, transportType) => {
     const tls = {
         enabled: true,
         insecure: params.allowInsecure === '1' || params.insecure === '1',
@@ -23,7 +23,11 @@ const buildTlsFromParams = (params, defaultSni) => {
     const sni = params.sni || params.peer || defaultSni;
     if (sni) tls.server_name = sni;
     const alpn = firstCsv(params.alpn);
-    if (alpn) tls.alpn = [alpn];
+    if (alpn) {
+        tls.alpn = [alpn];
+    } else if (transportType === 'ws') {
+        tls.alpn = ['http/1.1'];
+    }
     if (params.fp) tls.utls = { enabled: true, fingerprint: params.fp };
 
     applyEchToSingboxTls(tls, parseEchParams(params));
@@ -34,8 +38,29 @@ const buildTlsFromParams = (params, defaultSni) => {
 const buildTransport = (type, opts) => {
     if (type === 'ws') {
         const t = { type: 'ws' };
-        if (opts.path) t.path = opts.path;
+        let rawPath = opts.path || '';
+        let maxEarlyData = opts.maxEarlyData || opts.ed;
+
+        if (rawPath) {
+            const edMatch = rawPath.match(/([?&])ed=(\d+)(&?)/);
+            if (edMatch) {
+                if (!maxEarlyData) {
+                    maxEarlyData = parseInt(edMatch[2], 10);
+                }
+                rawPath = rawPath
+                    .replace(/([?&])ed=\d+(&?)/, (m, p1, p2) => (p1 === '?' && p2 === '&' ? '?' : ''))
+                    .replace(/\?$/, '');
+            }
+        }
+
+        if (rawPath) t.path = rawPath;
         if (opts.host) t.headers = { Host: opts.host };
+
+        const edVal = parseInt(maxEarlyData, 10);
+        if (Number.isFinite(edVal) && edVal > 0) {
+            t.max_early_data = edVal;
+            t.early_data_header_name = opts.earlyDataHeader || 'Sec-WebSocket-Protocol';
+        }
         return t;
     }
     if (type === 'grpc') {
@@ -78,7 +103,12 @@ const parseVmess = (url, tag, raw) => {
         security: c.scy || 'auto', // 加密算法（不是传输类型）
     };
 
-    const transport = buildTransport(c.net, { path: c.path, host: c.host, serviceName: c.path });
+    const transport = buildTransport(c.net, {
+        path: c.path,
+        host: c.host,
+        serviceName: c.path,
+        ed: c.ed,
+    });
     if (transport) node.transport = transport;
 
     if (c.tls === '1' || c.tls === 'tls') {
@@ -88,8 +118,12 @@ const parseVmess = (url, tag, raw) => {
         };
         const sni = c.sni || c.host;
         if (sni) node.tls.server_name = sni;
-        const alpn = firstCsv(String(c.alpn));
-        if (alpn) node.tls.alpn = [alpn];
+        const alpn = firstCsv(String(c.alpn || ''));
+        if (alpn) {
+            node.tls.alpn = [alpn];
+        } else if (c.net === 'ws') {
+            node.tls.alpn = ['http/1.1'];
+        }
         if (c.fp) node.tls.utls = { enabled: true, fingerprint: c.fp };
 
         // ECH（vmess JSON 字段 ech / ech-config 或别名）
@@ -116,14 +150,15 @@ const parseVless = (url, tag) => {
         path: params.path && safeDecode(params.path),
         host: params.host,
         serviceName: params.serviceName,
+        ed: params.ed,
     });
     if (transport) node.transport = transport;
 
     if (params.security === 'tls') {
-        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname));
+        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname), params.type);
     } else if (params.security === 'reality') {
         node.tls = {
-            ...buildTlsFromParams(params, normalizeServerHost(url.hostname)),
+            ...buildTlsFromParams(params, normalizeServerHost(url.hostname), params.type),
             reality: {
                 enabled: true,
                 public_key: params.pbk || params.publicKey || '',
@@ -151,12 +186,13 @@ const parseTrojan = (url, tag) => {
         path: params.path && safeDecode(params.path),
         host: params.host,
         serviceName: params.serviceName,
+        ed: params.ed,
     });
     if (transport) node.transport = transport;
 
     // trojan 默认就是 TLS；仅当显式 security=none 才禁用
     if (params.security !== 'none') {
-        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname));
+        node.tls = buildTlsFromParams(params, normalizeServerHost(url.hostname), params.type);
     }
     return node;
 };
