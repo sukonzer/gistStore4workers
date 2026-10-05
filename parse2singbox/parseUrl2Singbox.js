@@ -10,6 +10,7 @@ import {
     normalizeServerHost,
     parseEchParams,
     applyEchToSingboxTls,
+    splitTagDetour,
 } from '../lib/urlHelpers.js';
 
 // ---- helpers ---------------------------------------------------------------
@@ -345,14 +346,19 @@ export const parseUrlToSingbox = (line) => {
     try {
         const url = new URL(trimmed);
         const protocol = url.protocol.replace(':', '');
-        const tag = safeDecode(url.hash.slice(1)) || `${protocol}@${url.host}`;
+        const rawTag = safeDecode(url.hash.slice(1)) || `${protocol}@${url.host}`;
+        const { tag, detour } = splitTagDetour(rawTag);
 
         const parser = PARSERS[protocol];
         if (!parser) {
             console.warn(`Unknown protocol: ${protocol}, skipping`);
             return null;
         }
-        return parser(url, tag, trimmed);
+        const node = parser(url, tag, trimmed);
+        if (node && detour && protocol !== 'vmess' && !node.detour) {
+            node.detour = detour;
+        }
+        return node;
     } catch (e) {
         console.warn(`Parse failed for: ${trimmed.slice(0, 60)}... Error: ${e.message}`);
         return null;

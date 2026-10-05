@@ -10,6 +10,7 @@ import {
     normalizeServerHost,
     parseEchParams,
     applyEchToMihomo,
+    splitTagDetour,
 } from '../lib/urlHelpers.js';
 
 // ---- helpers ---------------------------------------------------------------
@@ -310,14 +311,19 @@ export const parseUrlToMihomo = (line) => {
     try {
         const url = new URL(trimmed);
         const protocol = url.protocol.replace(':', '');
-        const name = safeDecode(url.hash.slice(1)) || `${protocol}@${url.host}`;
+        const rawName = safeDecode(url.hash.slice(1)) || `${protocol}@${url.host}`;
+        const { tag: name, detour } = splitTagDetour(rawName);
 
         const parser = PARSERS[protocol];
         if (!parser) {
             console.warn(`[mihomo] Unknown protocol: ${protocol}, skipping`);
             return null;
         }
-        return parser(url, name, trimmed);
+        const node = parser(url, name, trimmed);
+        if (node && detour && protocol !== 'vmess' && !node['dialer-proxy']) {
+            node['dialer-proxy'] = detour;
+        }
+        return node;
     } catch (e) {
         console.warn(`[mihomo] Parse failed for: ${trimmed.slice(0, 60)}... Error: ${e.message}`);
         return null;

@@ -39,6 +39,19 @@
 
 sing-box 模板 `outbounds` 可用 `"{all}"` 占位符。需要筛选节点时，在模板根节点设置 `include`、`exclude` 数组；数组字符串会作为不区分大小写的正则源码，例如 `"HK|香港"`，也可用 `"/模式/flags"` 指定 flags，例如 `"/^(HK|香港)/i"`。如某个出站项需要覆盖全局规则，也可在该出站项设置同名字段。mihomo 模板用 `include-all-proxies` + `filter` 分组。节点 URL 支持 ECH 参数（`ech=1`、`ech-config` 等），详见 `parse2singbox/parseUrl2Singbox.js`。
 
+### 链式代理（前置代理）
+
+节点 URL 的 hash（`#` 备注部分）支持使用竖线 `|` 指定前置代理节点名，格式为：`#节点名称|前置代理名称`。
+
+- **sing-box**：自动解析并注入对应出站项的 `detour: "前置代理名称"`。
+- **mihomo (Clash.Meta)**：自动解析并注入对应代理项的 `dialer-proxy: "前置代理名称"`。
+
+示例：
+```text
+socks5://user:pass@1.2.3.4:1080#US-落地节点|US-前置节点
+```
+生成后，该节点的出站流量会自动先通过 `US-前置节点` 进行中转。
+
 ---
 
 ## UI 模式
